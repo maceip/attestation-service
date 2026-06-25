@@ -60,7 +60,7 @@ pub struct Receipt {
     pub value_x_stable: bool,
     pub eat_version: u32,
     pub eat_profile: String,
-    /// The raw, wire-compatible EAT — base64(CBOR). Feed this to `runcard`.
+    /// The raw, wire-compatible EAT — base64(CBOR). Feed this to `uq`.
     pub eat_cbor_b64: String,
     pub detail: String,
 }

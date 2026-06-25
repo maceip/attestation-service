@@ -5,7 +5,7 @@
 //! is honestly marked `witness`.
 //!
 //! [`CommandQuoteSource`] is the seam to the runtime layer (`attested-workload`
-//! / `unified-quote`'s `runcard`/`aw` binaries): a configured command is given
+//! / `unified-quote`'s `uq`/`aw` binaries): a configured command is given
 //! the 64-byte `report_data` (hex) and must emit the raw quote. This keeps
 //! device ioctls in the runtime layer where they belong, while the service
 //! orchestrates the build→bind→quote flow.
@@ -42,7 +42,7 @@ impl QuoteSource for SoftwareWitness {
 /// Invoke an external collector. The command is run with the report_data hex
 /// appended as its final argument and must write the raw quote bytes to stdout.
 ///
-/// Example (conceptual): `AS_QUOTE_CMD="runcard quote --platform tdx --report-data"`
+/// Example (conceptual): `AS_QUOTE_CMD="uq quote --platform tdx --report-data"`
 pub struct CommandQuoteSource {
     pub command: String,
     pub platform: Platform,

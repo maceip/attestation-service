@@ -1,7 +1,7 @@
 //! Verification engine: decode an EAT, walk its build→runtime chain, and
 //! cryptographically verify every stage's hardware quote against the pinned
 //! vendor roots. This is the core demo of the lower layers — the same check
-//! `runcard` runs, exposed as a service.
+//! `uq` runs, exposed as a service.
 
 use std::collections::BTreeMap;
 
