@@ -6,14 +6,45 @@ submit a source tarball; an ephemeral **intel tdx** vm shadow-builds it inside
 the tee and returns a signed **eat** receipt that binds the build output to a
 hardware quote. the build host is not trusted — only the cpu vendor root is.
 
-## use
+it is also the demo surface for the lower layers: it issues stage0 (build) and
+stage1 (runtime) eat receipts that chain, and it cryptographically verifies real
+aws nitro / amd sev-snp / intel tdx quotes against pinned vendor roots — the same
+check `runcard` runs. the eat format and verifier are vendored from
+[unified-quote](https://github.com/maceip/unified-quote).
+
+## run
 
 ```bash
-curl -F src=@app.tar.gz https://<service>/attest
-# -> { "verdict": "verified", "eat": "...", "mrtd": "..." }
+cargo build --release --bin attestation-service
+./target/release/attestation-service        # listens on 127.0.0.1:8080
 ```
 
-the receipt format and verifier are [unified-quote](https://github.com/maceip/unified-quote).
+## endpoints
+
+- `POST /v1/attest` — submit a source tarball (`--data-binary @app.tar.gz`, or
+  multipart `src=@app.tar.gz`); get a stage0 receipt. chain a runtime onto a
+  build by passing the previous eat: header `x-previous-eat: <base64 cbor>`.
+- `POST /v1/verify` — verify an eat (raw cbor or base64) and its full
+  build→runtime chain against the pinned vendor roots.
+- `GET /v1/receipt/{id}` · `GET /healthz`.
+
+## demo (no tee required)
+
+```bash
+./scripts/demo.sh
+```
+
+issues a witness receipt for sample source, then cryptographically verifies the
+bundled real tdx (stage0→stage1 chain) and aws nitro quotes against pinned vendor
+roots — entirely offline.
+
+## running inside attested-workload
+
+the service binds `127.0.0.1:8080` and serves `/v1/*` + `/healthz`, so it drops
+straight into [attested-workload](https://github.com/maceip/attested-workload)'s
+loopback app-proxy — its own responses are then served over attested tls. set
+`AS_QUOTE_CMD` + `AS_PLATFORM` to collect real hardware quotes; otherwise receipts
+are honest software witnesses (never faked). see `deploy/attested-workload.md`.
 
 ## the stack
 

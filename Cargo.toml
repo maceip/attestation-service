@@ -1,0 +1,56 @@
+[package]
+name = "attestation-service"
+version = "0.1.0"
+edition = "2021"
+description = "Issue and verify hardware-rooted EAT receipts for arbitrary source"
+
+[[bin]]
+name = "attestation-service"
+path = "src/main.rs"
+
+[features]
+# Platform verifiers. All on by default; each gates the matching arm in
+# the vendored stack verifier (quote::verify). Kept as named features so a
+# verifier-only build can drop one platform if its crypto deps are unwanted.
+default = ["nitro", "sev-snp", "tdx"]
+nitro = []
+sev-snp = []
+tdx = []
+
+[dependencies]
+# --- stack core (wire-compatible with maceip/unified-quote) ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_bytes = "0.11"
+ciborium = "0.2"
+serde_cbor = "0.11"
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+rand = "0.8"
+thiserror = "2"
+anyhow = "1"
+
+# crypto verification (ecdsa signature + cert chains)
+p384 = { version = "0.13", features = ["ecdsa"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
+ecdsa = { version = "0.16", features = ["verifying"] }
+x509-cert = { version = "0.2", features = ["std"] }
+der = { version = "0.7", features = ["std"] }
+spki = "0.7"
+
+# amd kds + intel pcs cert fetch (snp fallback path)
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"], default-features = false }
+
+# --- service ---
+axum = { version = "0.8", features = ["multipart"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tar = "0.4"
+flate2 = "1"
+tempfile = "3"
+
+[dev-dependencies]
+tempfile = "3"
