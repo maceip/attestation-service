@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>attestation-service // confidential compute</title>
+<style>
+:root{
+  --bg:#080a09; --panel:#0d100e; --line:#1c241e; --fg:#c6d2c6;
+  --dim:#6f7e70; --acc:#5ef08a; --amber:#ffb454; --hot:#ff5f6e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font-family:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px);
+  opacity:.35;mix-blend-mode:multiply}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:760px;margin:0 auto;padding:40px 22px 80px}
+.bar{display:flex;justify-content:space-between;align-items:center;
+  color:var(--dim);font-size:12px;letter-spacing:.08em;border-bottom:1px solid var(--line);
+  padding-bottom:10px;margin-bottom:34px}
+.bar .dot{color:var(--acc)}
+.tag{color:var(--amber)}
+h1{font-size:40px;margin:0;letter-spacing:-.02em;font-weight:600}
+.role{display:inline-block;margin-top:14px;border:1px solid var(--line);
+  background:var(--panel);color:var(--acc);padding:3px 10px;border-radius:3px;font-size:12px;letter-spacing:.06em}
+.tagline{color:var(--dim);margin:10px 0 26px;font-size:15px}
+.summary{margin:0 0 30px}
+.box{border:1px solid var(--line);background:var(--panel);border-radius:5px;
+  padding:0;margin:26px 0;position:relative}
+.box .hd{border-bottom:1px solid var(--line);padding:8px 14px;color:var(--dim);
+  font-size:12px;letter-spacing:.1em;text-transform:lowercase}
+.box pre{margin:0;padding:16px 14px;overflow-x:auto;font-size:13.5px;color:var(--fg)}
+.box pre .p{color:var(--acc)}
+.box pre .ok{color:var(--acc)}
+.box pre .c{color:var(--dim)}
+.stack{list-style:none;margin:0;padding:0}
+.stack li{display:flex;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line);align-items:baseline}
+.stack li:last-child{border-bottom:0}
+.stack .lyr{color:var(--dim);min-width:160px;font-size:12px;letter-spacing:.05em}
+.stack .here{color:var(--amber)}
+.stack .here .lyr{color:var(--amber)}
+.mark{color:var(--acc)}
+footer{margin-top:46px;border-top:1px solid var(--line);padding-top:16px;
+  color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+h2{font-size:13px;letter-spacing:.12em;color:var(--dim);text-transform:lowercase;
+  margin:34px 0 10px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <span><span class="dot">●</span> confidential compute</span>
+    <span class="tag">rooted in silicon, not a provider</span>
+  </div>
+
+  <h1>attestation-service</h1>
+  <div class="role">attestation service</div>
+  <div class="tagline">verifiable eat receipts for arbitrary source</div>
+
+  <p class="summary">submit a source tarball; an ephemeral intel tdx vm shadow-builds it inside the tee and returns a signed eat receipt binding the build output to a hardware quote. the build host is not trusted — only the cpu vendor root is.</p>
+
+  <div class="box">
+    <div class="hd">$ attestation-service</div>
+    <pre><span class="p">$</span> curl -F src=@app.tar.gz https://&lt;service&gt;/attest
+{ "verdict": "<span class="ok">verified</span>", "eat": "…", "mrtd": "…" }</pre>
+  </div>
+
+  <h2>the stack</h2>
+  <div class="box">
+    <ul class="stack">
+      <li><span class="lyr">agent platform</span><a href="https://maceip.github.io/cvm-agent/">cvm-agent</a></li>
+      <li class="here"><span class="lyr">attestation service</span><span class="mark">▸ attestation-service <span style="color:var(--dim)">(here)</span></span></li>
+      <li><span class="lyr">quote format</span><a href="https://maceip.github.io/unified-quote/">unified-quote</a></li>
+      <li><span class="lyr">in-tee runtime</span><a href="https://maceip.github.io/attested-workload/">attested-workload</a></li>
+    </ul>
+  </div>
+
+  <footer>
+    <span><a href="https://github.com/maceip/attestation-service">github.com/maceip/attestation-service</a></span>
+    <span>aws nitro · amd sev-snp · intel tdx</span>
+  </footer>
+</div>
+</body>
+</html>
