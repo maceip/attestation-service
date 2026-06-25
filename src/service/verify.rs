@@ -51,7 +51,7 @@ fn verify_one(token: &EatToken) -> StageView {
                         m,
                         format!(
                             "quote verified against pinned {} vendor root",
-                            platform.as_str()
+                            crate::stackcore::platform_name(platform)
                         ),
                     )
                 }

@@ -9,8 +9,9 @@ hardware quote. the build host is not trusted — only the cpu vendor root is.
 it is also the demo surface for the lower layers: it issues stage0 (build) and
 stage1 (runtime) eat receipts that chain, and it cryptographically verifies real
 aws nitro / amd sev-snp / intel tdx quotes against pinned vendor roots — the same
-check `runcard` runs. the eat format and verifier are vendored from
-[unified-quote](https://github.com/maceip/unified-quote).
+check `uq` runs. the eat format and verifier are a direct cargo dependency on
+[unified-quote](https://github.com/maceip/unified-quote) (not vendored), so this
+service verifies with exactly the same code the base layer ships.
 
 ## run
 
