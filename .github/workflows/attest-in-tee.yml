@@ -55,12 +55,16 @@ jobs:
       - name: bind value_x into Azure SEV-SNP hardware (vTPM AK quote)
         run: |
           UQ=/home/azureuser/unified-quote/target/release/uq
-          # Deploy the freshly attested artifact as the served workload, then
-          # re-collect so the live bundle's value_x == this build's digest.
+          VX='${{ steps.dig.outputs.digest }}'
+          # Deploy the freshly attested artifact as the served workload.
           install -m 0755 ./attestation-service /home/azureuser/attestation-service
+          # Capture an offline-verifiable bundle bound to this exact digest.
+          ( cd /home/azureuser && sudo "$UQ" azure collect --value-x "$VX" -o azure-bundle.json )
+          # Restart the live attested-TLS endpoint so its leaf cert binds the
+          # same digest, then verify the channel + chain end-to-end.
           sudo systemctl restart uq-azure
-          sleep 6
-          "$UQ" azure verify /home/azureuser/azure-bundle.json
+          sleep 8
+          "$UQ" azure check-tls https://localhost:8443/
 
       - name: publish artifact + hardware bundle (stable release)
         uses: softprops/action-gh-release@v2
@@ -76,7 +80,7 @@ jobs:
 
             Verify the full chain (source -> silicon):
               gh attestation verify attestation-service --repo ${{ github.repository }}
-              uq azure check http://51.124.172.253:8443/   # value_x must equal the digest above
+              uq azure check-tls https://attest.secure.build:8443/   # value_x must equal the digest above
           files: |
             ./attestation-service
             /home/azureuser/azure-bundle.json
@@ -96,7 +100,8 @@ jobs:
             "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "release": "azure-tee-build",
-            "endpoint": "http://51.124.172.253:8443/"
+            "endpoint": "https://attest.secure.build:8443/",
+            "transport": "attested-tls"
           }
           EOF
           git add docs/status/s2s.json

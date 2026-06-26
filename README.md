@@ -53,8 +53,10 @@ managed. the workflow:
 2. emits **github build provenance** (sigstore) attesting `D` was built from this
    commit by this workflow;
 3. binds the same `D` as `value_x` into the cvm's amd-rooted vTPM ak quote and
-   serves it; the artifact + hardware bundle are published to the
-   `azure-tee-build` release.
+   serves it over **attested-TLS** at `https://attest.secure.build:8443/` (the
+   leaf cert itself carries the snp→amd bundle, with the cert key bound into the
+   quote); the artifact + offline bundle are published to the `azure-tee-build`
+   release.
 
 two independent roots — sigstore supply-chain and amd hardware — meet at one
 `value_x`. one command checks both and asserts they agree:

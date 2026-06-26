@@ -4,5 +4,6 @@
   "run_url": "https://github.com/maceip/attestation-service/actions/runs/28251186123",
   "built_at": "2026-06-26T16:32:20Z",
   "release": "azure-tee-build",
-  "endpoint": "http://51.124.172.253:8443/"
+  "endpoint": "https://attest.secure.build:8443/",
+  "transport": "attested-tls"
 }

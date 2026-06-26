@@ -159,6 +159,7 @@ footer a{color:var(--dim)} footer a:hover{color:var(--acc)}
       </div>
       <div class="digest">value_x <code id="s2s-digest">dde6f4c1ce11a0a21bb02384e1440189232984eb5b7659d877725ded0c204b87</code></div>
       <div class="meta" id="s2s-meta">built in-tee by a self-hosted runner &middot; github build provenance binds the same digest</div>
+      <div class="meta" id="s2s-ep">live: attested-TLS at <code>https://attest.secure.build:8443/</code> &middot; the leaf cert is the evidence</div>
     </div>
     <pre><span class="p">$</span> ./scripts/verify-source-to-silicon.sh
 <span class="c"># [1/4] azure sev-snp &rarr; amd root  &middot; value_x_bound true</span>
@@ -213,6 +214,12 @@ footer a{color:var(--dim)} footer a:hover{color:var(--acc)}
       el.textContent = 'built in-tee from ' + d.commit.slice(0, 7) +
         ' \u00b7 github build provenance binds the same digest' +
         (d.built_at ? ' \u00b7 ' + d.built_at : '');
+    }
+    if (d.endpoint) {
+      const ep = document.getElementById('s2s-ep');
+      const t = d.transport === 'attested-tls' ? 'attested-TLS' : 'endpoint';
+      ep.innerHTML = 'live: ' + t + ' at <code>' + d.endpoint +
+        '</code>' + (d.transport === 'attested-tls' ? ' \u00b7 the leaf cert is the evidence' : '');
     }
   } catch (e) {}
 })();

@@ -9,7 +9,7 @@
 # Usage: verify-source-to-silicon.sh [endpoint] [owner/repo]
 set -euo pipefail
 
-ENDPOINT="${1:-http://51.124.172.253:8443/}"
+ENDPOINT="${1:-https://attest.secure.build:8443/}"
 REPO="${2:-maceip/attestation-service}"
 UQ="${UQ:-uq}"
 WORK="$(mktemp -d)"
@@ -17,8 +17,15 @@ trap 'rm -rf "$WORK"' EXIT
 
 sha256() { sha256sum "$1" 2>/dev/null | awk '{print $1}' || shasum -a 256 "$1" | awk '{print $1}'; }
 
+# attested-TLS endpoints (https) carry the evidence in the cert; plain http
+# endpoints serve a bundle. pick the matching verifier subcommand.
+case "$ENDPOINT" in
+  https://*) AZ_CHECK="check-tls" ;;
+  *)         AZ_CHECK="check" ;;
+esac
+
 echo "==> [1/4] hardware attestation (Azure SEV-SNP -> AMD root) + value_x"
-HW_OUT="$("$UQ" azure check "$ENDPOINT" 2>&1)" || { echo "$HW_OUT"; exit 1; }
+HW_OUT="$("$UQ" azure "$AZ_CHECK" "$ENDPOINT" 2>&1)" || { echo "$HW_OUT"; exit 1; }
 echo "$HW_OUT" | sed 's/^/    /'
 echo "$HW_OUT" | grep -q 'verdict: *verified'    || { echo "FAIL: hardware verdict not verified"; exit 1; }
 echo "$HW_OUT" | grep -q 'value_x_bound: *true'  || { echo "FAIL: value_x not bound in hardware quote"; exit 1; }
