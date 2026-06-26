@@ -20,6 +20,7 @@ permissions:
   contents: write # publish the release asset others verify against
   id-token: write # OIDC identity for Sigstore/Fulcio
   attestations: write # build provenance
+  actions: write # dispatch the Pages deploy after refreshing the badge
 
 concurrency:
   group: attest-in-tee
@@ -103,3 +104,14 @@ jobs:
           for i in 1 2 3; do
             git pull --rebase origin main && git push origin HEAD:main && break || sleep $((i*3))
           done
+
+      - name: redeploy pages with current badge
+        # GITHUB_TOKEN pushes do not trigger workflows, so dispatch Pages
+        # explicitly (workflow_dispatch is exempt from the recursion guard).
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/actions/workflows/deploy-pages.yml/dispatches" \
+            -d '{"ref":"main"}'
