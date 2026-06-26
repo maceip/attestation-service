@@ -11,7 +11,10 @@ stage1 (runtime) eat receipts that chain, and it cryptographically verifies real
 aws nitro / amd sev-snp / intel tdx quotes against pinned vendor roots — the same
 check `uq` runs. the eat format and verifier are a direct cargo dependency on
 [unified-quote](https://github.com/maceip/unified-quote) (not vendored), so this
-service verifies with exactly the same code the base layer ships.
+service verifies with exactly the same code the base layer ships — including the
+azure path, where a sev-snp report is read from the vTPM and rooted to the amd
+ark (no MAA). the base layer runs three live, remotely re-verifiable nodes today
+(aws sev-snp, aws nitro, azure sev-snp): https://maceip.github.io/unified-quote/live.html
 
 ## run
 
