@@ -42,6 +42,31 @@ issues a witness receipt for sample source, then cryptographically verifies the
 bundled real tdx (stage0→stage1 chain) and aws nitro quotes against pinned vendor
 roots — entirely offline.
 
+## source → silicon (live)
+
+this repo is built **inside** an azure sev-snp confidential vm by a self-hosted
+github runner ([`.github/workflows/attest-in-tee.yml`](.github/workflows/attest-in-tee.yml)),
+so the build host itself is hardware-attested — not merely trusted because it is
+managed. the workflow:
+
+1. builds `attestation-service` in the tee → artifact digest `D = sha256(bin)`;
+2. emits **github build provenance** (sigstore) attesting `D` was built from this
+   commit by this workflow;
+3. binds the same `D` as `value_x` into the cvm's amd-rooted vTPM ak quote and
+   serves it; the artifact + hardware bundle are published to the
+   `azure-tee-build` release.
+
+two independent roots — sigstore supply-chain and amd hardware — meet at one
+`value_x`. one command checks both and asserts they agree:
+
+```bash
+./scripts/verify-source-to-silicon.sh
+# [1/4] azure sev-snp → amd root  · value_x_bound true
+# [2/4] download release artifact
+# [3/4] gh attestation verify     · provenance from maceip/attestation-service (self-hosted, in-tee)
+# [4/4] D == value_x              · PASS: source → silicon
+```
+
 ## running inside attested-workload
 
 the service binds `127.0.0.1:8080` and serves `/v1/*` + `/healthz`, so it drops
