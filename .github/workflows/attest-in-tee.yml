@@ -80,3 +80,26 @@ jobs:
             ./attestation-service
             /home/azureuser/azure-bundle.json
           fail_on_unmatched_files: true
+
+      - name: refresh source->silicon pages badge
+        run: |
+          git config user.name "tee-runner"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          mkdir -p docs/status
+          cat > docs/status/s2s.json <<EOF
+          {
+            "value_x": "${{ steps.dig.outputs.digest }}",
+            "commit": "${{ github.sha }}",
+            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "release": "azure-tee-build",
+            "endpoint": "http://51.124.172.253:8443/"
+          }
+          EOF
+          git add docs/status/s2s.json
+          git commit -m "pages: source->silicon digest ${GITHUB_SHA::7}" || { echo "no change"; exit 0; }
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && break || sleep $((i*3))
+          done

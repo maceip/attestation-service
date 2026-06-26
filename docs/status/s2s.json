@@ -1,0 +1,8 @@
+{
+  "value_x": "dde6f4c1ce11a0a21bb02384e1440189232984eb5b7659d877725ded0c204b87",
+  "commit": "4df5fbbee7288e2142c27cb06c611c4f2840dd30",
+  "run_url": "https://github.com/maceip/attestation-service/actions/runs/28249423402",
+  "built_at": "2026-06-26T15:55:25Z",
+  "release": "azure-tee-build",
+  "endpoint": "http://51.124.172.253:8443/"
+}
