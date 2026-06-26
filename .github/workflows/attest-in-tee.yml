@@ -1,0 +1,82 @@
+name: attest-in-tee
+
+# Build attestation-service INSIDE the Azure SEV-SNP confidential VM (a
+# self-hosted runner), produce GitHub build provenance for the artifact, and
+# bind the same artifact digest into the AMD-rooted vTPM AK quote that the box
+# serves. Two independent roots (Sigstore supply-chain + AMD hardware) meet at
+# one value_x = sha256(attestation-service).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/attest-in-tee.yml"
+
+permissions:
+  contents: write # publish the release asset others verify against
+  id-token: write # OIDC identity for Sigstore/Fulcio
+  attestations: write # build provenance
+
+concurrency:
+  group: attest-in-tee
+  cancel-in-progress: false
+
+jobs:
+  build-and-bind:
+    # The label set steers this onto the confidential VM, so the build host
+    # itself is hardware-attested — not merely trusted because it is managed.
+    runs-on: [self-hosted, sev-snp]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build attestation-service (in-TEE)
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo build --release --bin attestation-service
+          install -m 0755 target/release/attestation-service ./attestation-service
+
+      - name: compute artifact digest (value_x)
+        id: dig
+        run: |
+          D=$(sha256sum ./attestation-service | awk '{print $1}')
+          echo "digest=$D" >> "$GITHUB_OUTPUT"
+          echo "value_x = $D"
+
+      - name: github build provenance (sigstore)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ./attestation-service
+
+      - name: bind value_x into Azure SEV-SNP hardware (vTPM AK quote)
+        run: |
+          UQ=/home/azureuser/unified-quote/target/release/uq
+          # Deploy the freshly attested artifact as the served workload, then
+          # re-collect so the live bundle's value_x == this build's digest.
+          install -m 0755 ./attestation-service /home/azureuser/attestation-service
+          sudo systemctl restart uq-azure
+          sleep 6
+          "$UQ" azure verify /home/azureuser/azure-bundle.json
+
+      - name: publish artifact + hardware bundle (stable release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: azure-tee-build
+          name: attestation-service built in Azure SEV-SNP TEE
+          body: |
+            value_x (sha256) = ${{ steps.dig.outputs.digest }}
+
+            Source commit ${{ github.sha }} was built inside an Azure SEV-SNP
+            confidential VM. GitHub build provenance and the AMD-rooted vTPM AK
+            quote both bind this exact digest.
+
+            Verify the full chain (source -> silicon):
+              gh attestation verify attestation-service --repo ${{ github.repository }}
+              uq azure check http://51.124.172.253:8443/   # value_x must equal the digest above
+          files: |
+            ./attestation-service
+            /home/azureuser/azure-bundle.json
+          fail_on_unmatched_files: true
