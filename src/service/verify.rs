@@ -67,9 +67,10 @@ fn verify_one(token: &EatToken) -> StageView {
         _ => stage_view(
             token,
             is_root,
-            Verdict::Witness,
+            Verdict::Failed,
             BTreeMap::new(),
-            "no hardware quote present — software witness (not hardware-rooted)".into(),
+            "no hardware quote present — refused (attestation requires a hardware root of trust)"
+                .into(),
         ),
     }
 }
@@ -115,8 +116,9 @@ pub fn verify_chain(token: EatToken) -> Receipt {
         )
     } else {
         (
-            Verdict::Witness,
-            "software witness only — no hardware quote in the chain".to_string(),
+            Verdict::Failed,
+            "no hardware quote in the chain — refused (attestation requires a hardware root)"
+                .to_string(),
         )
     };
 

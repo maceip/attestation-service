@@ -38,9 +38,10 @@ cargo build --release --bin attestation-service
 ./scripts/demo.sh
 ```
 
-issues a witness receipt for sample source, then cryptographically verifies the
-bundled real tdx (stage0→stage1 chain) and aws nitro quotes against pinned vendor
-roots — entirely offline.
+starts the service verify-only, shows that issuance is **refused** without a
+hardware quote source (the service never emits a software-witness receipt), then
+cryptographically verifies the bundled real tdx (stage0→stage1 chain) and aws
+nitro quotes against pinned vendor roots — entirely offline.
 
 ## source → silicon (live)
 
@@ -74,8 +75,10 @@ two independent roots — sigstore supply-chain and amd hardware — meet at one
 the service binds `127.0.0.1:8080` and serves `/v1/*` + `/healthz`, so it drops
 straight into [attested-workload](https://github.com/maceip/attested-workload)'s
 loopback app-proxy — its own responses are then served over attested tls. set
-`AS_QUOTE_CMD` + `AS_PLATFORM` to collect real hardware quotes; otherwise receipts
-are honest software witnesses (never faked). see `deploy/attested-workload.md`.
+`AS_QUOTE_CMD` + `AS_PLATFORM` (`nitro`|`sev-snp`|`tdx`) to issue hardware-rooted
+receipts. with no `AS_QUOTE_CMD` the service runs verify-only and **refuses
+issuance** — it never falls back to software-witness receipts. see
+`deploy/attested-workload.md`.
 
 ## the stack
 

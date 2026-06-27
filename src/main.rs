@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    let state = AppState::from_env();
+    let state = AppState::from_env()?;
     let bind = std::env::var("AS_BIND").unwrap_or_else(|_| "127.0.0.1:8080".to_string());
 
     let app = router(state.clone());

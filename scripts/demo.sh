@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# End-to-end demo of attestation-service. No TEE required.
+# Offline verification demo of attestation-service. No TEE required to verify.
 #
-#   1. builds the service
-#   2. issues a stage0 witness receipt for sample source
+#   1. builds the service and starts it verify-only (no AS_QUOTE_CMD)
+#   2. shows that issuance is REFUSED without a hardware quote source —
+#      the service never emits a software-witness receipt
 #   3. cryptographically verifies bundled real TDX (stage0->stage1) and AWS
 #      Nitro quotes against pinned vendor roots — entirely offline.
 set -euo pipefail
@@ -28,13 +29,14 @@ pp() { python3 -m json.tool 2>/dev/null || cat; }
 say "health"
 curl -fsS "${BASE}/healthz" | pp
 
-say "stage0 attest (witness) for sample source"
+say "issuance is refused without a hardware quote source (secure default)"
 SRC="$(mktemp -d)"
 printf 'def main():\n    print("hello, attested world")\n' > "${SRC}/app.py"
 printf '# sample workload\n' > "${SRC}/README.md"
 TAR="$(mktemp).tar.gz"
 tar -C "${SRC}" -czf "${TAR}" .
-curl -fsS -X POST --data-binary @"${TAR}" "${BASE}/v1/attest" | pp
+# No -f: a 4xx/5xx is the EXPECTED, secure-by-default outcome here.
+curl -sS -X POST --data-binary @"${TAR}" "${BASE}/v1/attest" | pp
 
 say "verify real TDX stage1 (walks stage0->stage1, pinned Intel root)"
 curl -fsS -X POST --data-binary @examples/fixtures/tdx_stage1.cbor "${BASE}/v1/verify" | pp

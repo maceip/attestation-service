@@ -1,8 +1,8 @@
 //! Where a hardware quote comes from.
 //!
-//! The service itself never fabricates hardware evidence. It either obtains a
-//! real quote (when running inside a TEE) or returns nothing and the receipt
-//! is honestly marked `witness`.
+//! The service itself never fabricates hardware evidence and never runs without
+//! a hardware quote source: there is no software-witness mode. [`CommandQuoteSource`]
+//! is the only implementation and is mandatory (see `AppState::from_env`).
 //!
 //! [`CommandQuoteSource`] is the seam to the runtime layer (`attested-workload`
 //! / `unified-quote`'s `uq`/`aw` binaries): a configured command is given
@@ -25,18 +25,6 @@ pub trait QuoteSource: Send + Sync {
     /// the EAT `binding_bytes()`). Returns `Ok(None)` when no TEE is present.
     fn collect(&self, report_data: &[u8; 64]) -> anyhow::Result<Option<CollectedQuote>>;
     fn name(&self) -> &'static str;
-}
-
-/// No TEE: every receipt is a software witness.
-pub struct SoftwareWitness;
-
-impl QuoteSource for SoftwareWitness {
-    fn collect(&self, _report_data: &[u8; 64]) -> anyhow::Result<Option<CollectedQuote>> {
-        Ok(None)
-    }
-    fn name(&self) -> &'static str {
-        "software-witness"
-    }
 }
 
 /// Invoke an external collector. The command is run with the report_data hex

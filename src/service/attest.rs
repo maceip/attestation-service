@@ -55,7 +55,7 @@ pub fn run_attest(
         version: EAT_VERSION,
         eat_profile: EAT_PROFILE.to_string(),
         value_x: build.value_x,
-        platform: 0, // software witness until a quote is collected
+        platform: 0, // unset until a hardware quote is collected (step 5)
         platform_measurement: Vec::new(),
         platform_quote: Vec::new(),
         tls_spki_hash: opts.tls_spki_hash.unwrap_or([0u8; 32]),
@@ -81,11 +81,24 @@ pub fn run_attest(
     report_data[..32].copy_from_slice(&binding);
     report_data[32..].copy_from_slice(&eat.value_x[..32]);
 
-    // 5. Collect a hardware quote if a TEE is available.
-    if let Some(q) = state.quote_source.collect(&report_data)? {
-        eat.platform = platform_to_u8(q.platform);
-        eat.platform_quote = q.raw_quote;
-        eat.platform_measurement = q.measurement;
+    // 5. Collect a hardware quote. Issuance fails closed: without a configured
+    //    hardware quote source the service refuses to issue — it never emits a
+    //    software-witness receipt.
+    let quote_source = state.quote_source.as_ref().ok_or_else(|| {
+        anyhow::anyhow!(
+            "issuance refused: no hardware quote source configured. This service \
+             only issues hardware-rooted receipts; set AS_QUOTE_CMD + AS_PLATFORM."
+        )
+    })?;
+    match quote_source.collect(&report_data)? {
+        Some(q) => {
+            eat.platform = platform_to_u8(q.platform);
+            eat.platform_quote = q.raw_quote;
+            eat.platform_measurement = q.measurement;
+        }
+        None => anyhow::bail!(
+            "issuance refused: hardware quote source returned no quote (no TEE present)"
+        ),
     }
 
     // 6. Self-verify and project to a receipt (binding excludes the quote, so

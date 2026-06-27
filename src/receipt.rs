@@ -13,9 +13,8 @@ use crate::stackcore::eat::EatToken;
 pub enum Verdict {
     /// A hardware quote was present and verified against a pinned vendor root.
     Verified,
-    /// No hardware quote — a software witness receipt. Honest, not trusted.
-    Witness,
-    /// A hardware quote was present but failed verification.
+    /// No valid hardware quote — refused. There is no untrusted "witness"
+    /// acceptance: a receipt is either hardware-rooted or it failed.
     Failed,
 }
 
@@ -23,7 +22,6 @@ impl Verdict {
     pub fn as_str(&self) -> &'static str {
         match self {
             Verdict::Verified => "verified",
-            Verdict::Witness => "witness",
             Verdict::Failed => "failed",
         }
     }
@@ -77,7 +75,7 @@ pub fn stage_view(
         1 => "nitro",
         2 => "sev-snp",
         3 => "tdx",
-        _ => "software-witness",
+        _ => "unknown",
     }
     .to_string();
 
