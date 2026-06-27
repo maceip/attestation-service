@@ -63,8 +63,21 @@ jobs:
           # Restart the live attested-TLS endpoint so its leaf cert binds the
           # same digest, then verify the channel + chain end-to-end.
           sudo systemctl restart uq-azure
-          sleep 8
-          "$UQ" azure check-tls https://localhost:8443/
+          # The service mints a fresh attested-TLS cert on boot (KDS round-trips +
+          # self-verify), which can take longer than a fixed sleep. Poll until the
+          # channel verifies, with honest diagnostics if it never does.
+          ok=0
+          for i in $(seq 1 30); do
+            if "$UQ" azure check-tls https://localhost:8443/; then ok=1; break; fi
+            echo "[attest-in-tee] endpoint not ready (attempt $i/30); waiting…"
+            sleep 5
+          done
+          if [ "$ok" != 1 ]; then
+            echo "::error::uq-azure did not serve a verifiable attested-TLS endpoint in time"
+            sudo systemctl status uq-azure --no-pager -l | tail -40 || true
+            sudo journalctl -u uq-azure --no-pager -n 80 || true
+            exit 1
+          fi
 
       - name: publish artifact + hardware bundle (stable release)
         uses: softprops/action-gh-release@v2
