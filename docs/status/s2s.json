@@ -1,8 +1,8 @@
 {
-  "value_x": "296d722013039ae2ab7cf11adbdb9e6062a43e196958b878547615595dd93045",
-  "commit": "813b845b385031a66e8412f8347976ce81e94060",
-  "run_url": "https://github.com/maceip/attestation-service/actions/runs/28277222429",
-  "built_at": "2026-06-27T03:31:37Z",
+  "value_x": "b8514305c4cc8265969c4b3e8dd4dc6e2f9033b1a3065e15049653a10a2e58b6",
+  "commit": "98aef4e4315dff8c30ae879df075fd74244817e2",
+  "run_url": "https://github.com/maceip/attestation-service/actions/runs/28295815353",
+  "built_at": "2026-06-27T17:04:50Z",
   "release": "azure-tee-build",
   "endpoint": "https://attest.secure.build:8443/",
   "transport": "attested-tls"
