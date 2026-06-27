@@ -2629,7 +2629,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 [[package]]
 name = "unified-quote"
 version = "0.1.0"
-source = "git+https://github.com/maceip/unified-quote#3d53a1d79c555f196f916db9145cf1be322351b8"
+source = "git+https://github.com/maceip/unified-quote#727c58982eda19311777c6f2a7c6a47e25e68b34"
 dependencies = [
  "aes",
  "anyhow",
