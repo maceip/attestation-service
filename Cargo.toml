@@ -20,7 +20,7 @@ tdx = []
 [dependencies]
 # --- the stack base: real dependency on the unified-quote crate ---
 # (the eat format + quote verifier; not vendored — pulled from the repo)
-unified-quote = { git = "https://github.com/maceip/unified-quote", package = "unified-quote" }
+unified-quote = { git = "https://github.com/maceip/unified-quote", tag = "v0.1.4", package = "unified-quote" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

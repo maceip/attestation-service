@@ -15,7 +15,9 @@ use rand::RngCore;
 use crate::receipt::Receipt;
 use crate::service::state::AppState;
 use crate::service::verify::verify_chain;
-use crate::stackcore::eat::{platform_to_u8, EatToken, EAT_PROFILE, EAT_VERSION};
+use crate::stackcore::eat::{
+    platform_to_u8, EatToken, EAT_PROFILE, EAT_VERSION, DEFAULT_BINDING_SUITE,
+};
 
 #[derive(Default)]
 pub struct AttestOptions {
@@ -54,6 +56,7 @@ pub fn run_attest(
     let mut eat = EatToken {
         version: EAT_VERSION,
         eat_profile: EAT_PROFILE.to_string(),
+        binding_suite: DEFAULT_BINDING_SUITE,
         value_x: build.value_x,
         platform: 0, // unset until a hardware quote is collected (step 5)
         platform_measurement: Vec::new(),
