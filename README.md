@@ -89,6 +89,9 @@ issuance** — it never falls back to software-witness receipts. see
 
 pages: https://maceip.github.io/attestation-service/
 
+live source→silicon: both trust roots green — sigstore provenance and azure sev-snp
+(amd root) agree on one value_x at https://attest.secure.build:8443/
+
 <!-- agentic-canon -->
 ## agentic canon
 
