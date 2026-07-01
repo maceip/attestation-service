@@ -18,21 +18,20 @@ payloads, so trust composes: transport proof ⟶ build/runtime proof.
 
 ## quote source
 
-by default the service issues **software witnesses**: honest receipts that record
-`value_x` (source identity) and the build output but carry no hardware quote. they
-are never presented as hardware-backed.
+by default the service runs verify-only and refuses issuance. it does not emit
+software-witness receipts.
 
 to collect a real quote, point the service at a quote tool for the host tee:
 
 ```bash
-export AS_PLATFORM=tdx          # tdx | snp | nitro
-export AS_QUOTE_CMD="/usr/local/bin/get-quote"   # writes raw quote bytes to stdout,
-                                                 # report_data on argv[1] (hex)
+export AS_QUOTE_SOURCE="tdx:/usr/local/bin/get-quote"
+# command writes raw quote bytes to stdout and receives report_data as final argv (hex)
 ```
 
 the service commits the eat `binding_bytes` (value_x ‖ tls spki hash) into the
 quote's `report_data`, so the resulting receipt is bound to both the code and the
-serving key. verification then runs against the pinned vendor root for `AS_PLATFORM`.
+serving key. verification then runs against the pinned vendor root for the
+configured platform.
 
 ## stage chaining
 

@@ -22,12 +22,11 @@ impl AppState {
     /// Build state from the environment. **Fails closed**: there is no
     /// software-witness mode and no flag/env to enable one.
     ///
-    /// - `AS_QUOTE_CMD` + `AS_PLATFORM`: collect real hardware quotes via that
-    ///   command on the named platform (`nitro`|`sev-snp`|`tdx`). When set, the
-    ///   service can issue hardware-rooted receipts. When `AS_QUOTE_CMD` is
-    ///   unset the service runs **verify-only** and refuses issuance — it never
-    ///   falls back to issuing software-witness receipts. Setting `AS_QUOTE_CMD`
-    ///   without a valid `AS_PLATFORM` is a hard error.
+    /// - `AS_QUOTE_SOURCE=<platform>:<command>`: collect real hardware quotes
+    ///   through the configured command on `nitro`|`sev-snp`|`tdx`.
+    ///   `AS_QUOTE_CMD` + `AS_PLATFORM` is accepted only as a compatibility
+    ///   spelling and is validated the same way. With no quote source the service
+    ///   runs verify-only and refuses issuance.
     /// - `AS_BUILD_CMD`: if set, run this build command in the source tree;
     ///   otherwise the source tree is witnessed as-is (a measurement primitive,
     ///   still bound into the hardware quote).
@@ -37,30 +36,7 @@ impl AppState {
             _ => Arc::new(WitnessBuilder),
         };
 
-        let cmd = std::env::var("AS_QUOTE_CMD").ok().filter(|c| !c.trim().is_empty());
-        let quote_source: Option<Arc<dyn QuoteSource>> = match cmd {
-            Some(cmd) => {
-                let plat = std::env::var("AS_PLATFORM")
-                    .ok()
-                    .filter(|p| !p.trim().is_empty())
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "AS_QUOTE_CMD is set but AS_PLATFORM is missing \
-                             (expected nitro | sev-snp | tdx)"
-                        )
-                    })?;
-                let platform = match plat.to_lowercase().as_str() {
-                    "nitro" => Platform::Nitro,
-                    "sev-snp" | "snp" => Platform::SevSnp,
-                    "tdx" => Platform::Tdx,
-                    other => anyhow::bail!(
-                        "unknown AS_PLATFORM '{other}' (expected nitro | sev-snp | tdx)"
-                    ),
-                };
-                Some(Arc::new(CommandQuoteSource { command: cmd, platform }))
-            }
-            None => None,
-        };
+        let quote_source: Option<Arc<dyn QuoteSource>> = quote_source_from_env()?;
 
         let quote_name = match &quote_source {
             Some(qs) => qs.name(),
@@ -74,5 +50,85 @@ impl AppState {
             store: Arc::new(Mutex::new(HashMap::new())),
             mode,
         })
+    }
+}
+
+fn quote_source_from_env() -> anyhow::Result<Option<Arc<dyn QuoteSource>>> {
+    let source = std::env::var("AS_QUOTE_SOURCE")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
+    let cmd = std::env::var("AS_QUOTE_CMD")
+        .ok()
+        .filter(|c| !c.trim().is_empty());
+    let platform = std::env::var("AS_PLATFORM")
+        .ok()
+        .filter(|p| !p.trim().is_empty());
+
+    match (source, cmd, platform) {
+        (Some(source), None, None) => {
+            let (platform, command) = parse_quote_source(&source)?;
+            Ok(Some(Arc::new(CommandQuoteSource::new(command, platform)?)))
+        }
+        (Some(_), Some(_), _) | (Some(_), _, Some(_)) => {
+            anyhow::bail!("set either AS_QUOTE_SOURCE or AS_QUOTE_CMD + AS_PLATFORM, not both")
+        }
+        (None, Some(command), Some(platform)) => {
+            let platform = parse_platform(&platform, "AS_PLATFORM")?;
+            Ok(Some(Arc::new(CommandQuoteSource::new(command, platform)?)))
+        }
+        (None, Some(_), None) => {
+            anyhow::bail!(
+                "AS_QUOTE_CMD is set but AS_PLATFORM is missing (expected nitro | sev-snp | tdx)"
+            )
+        }
+        (None, None, Some(_)) => {
+            anyhow::bail!("AS_PLATFORM is set but AS_QUOTE_CMD is missing")
+        }
+        (None, None, None) => Ok(None),
+    }
+}
+
+fn parse_quote_source(source: &str) -> anyhow::Result<(Platform, String)> {
+    let (platform, command) = source
+        .split_once(':')
+        .ok_or_else(|| anyhow::anyhow!("AS_QUOTE_SOURCE must be '<platform>:<command>'"))?;
+    let platform = parse_platform(platform, "AS_QUOTE_SOURCE platform")?;
+    let command = command.trim();
+    if command.is_empty() {
+        anyhow::bail!("AS_QUOTE_SOURCE command must not be empty");
+    }
+    Ok((platform, command.to_string()))
+}
+
+fn parse_platform(value: &str, name: &str) -> anyhow::Result<Platform> {
+    match value.trim().to_lowercase().as_str() {
+        "nitro" => Ok(Platform::Nitro),
+        "sev-snp" | "snp" => Ok(Platform::SevSnp),
+        "tdx" => Ok(Platform::Tdx),
+        other => anyhow::bail!("unknown {name} '{other}' (expected nitro | sev-snp | tdx)"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_quote_source_accepts_platform_command_pair() {
+        let (platform, command) = parse_quote_source("sev-snp:uq azure collect").unwrap();
+        assert!(matches!(platform, Platform::SevSnp));
+        assert_eq!(command, "uq azure collect");
+    }
+
+    #[test]
+    fn parse_quote_source_rejects_missing_command() {
+        let err = parse_quote_source("tdx:   ").unwrap_err();
+        assert!(err.to_string().contains("command must not be empty"));
+    }
+
+    #[test]
+    fn parse_quote_source_rejects_unknown_platform() {
+        let err = parse_quote_source("desktop-tpm:collect").unwrap_err();
+        assert!(err.to_string().contains("unknown AS_QUOTE_SOURCE platform"));
     }
 }

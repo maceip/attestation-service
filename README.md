@@ -75,9 +75,9 @@ two independent roots — sigstore supply-chain and amd hardware — meet at one
 the service binds `127.0.0.1:8080` and serves `/v1/*` + `/healthz`, so it drops
 straight into [attested-workload](https://github.com/maceip/attested-workload)'s
 loopback app-proxy — its own responses are then served over attested tls. set
-`AS_QUOTE_CMD` + `AS_PLATFORM` (`nitro`|`sev-snp`|`tdx`) to issue hardware-rooted
-receipts. with no `AS_QUOTE_CMD` the service runs verify-only and **refuses
-issuance** — it never falls back to software-witness receipts. see
+`AS_QUOTE_SOURCE="<platform>:<command>"` (`nitro`|`sev-snp`|`tdx`) to issue
+hardware-rooted receipts. with no quote source the service runs verify-only and
+**refuses issuance** — it never falls back to software-witness receipts. see
 `deploy/attested-workload.md`.
 
 ## the stack
@@ -110,4 +110,3 @@ live source→silicon: both trust roots green — sigstore provenance and azure 
 </td>
 </tr>
 </table>
-

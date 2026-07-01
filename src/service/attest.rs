@@ -16,7 +16,7 @@ use crate::receipt::Receipt;
 use crate::service::state::AppState;
 use crate::service::verify::verify_chain;
 use crate::stackcore::eat::{
-    platform_to_u8, EatToken, EAT_PROFILE, EAT_VERSION, DEFAULT_BINDING_SUITE,
+    platform_to_u8, EatToken, DEFAULT_BINDING_SUITE, EAT_PROFILE, EAT_VERSION,
 };
 
 #[derive(Default)]
@@ -90,7 +90,7 @@ pub fn run_attest(
     let quote_source = state.quote_source.as_ref().ok_or_else(|| {
         anyhow::anyhow!(
             "issuance refused: no hardware quote source configured. This service \
-             only issues hardware-rooted receipts; set AS_QUOTE_CMD + AS_PLATFORM."
+             only issues hardware-rooted receipts; set AS_QUOTE_SOURCE."
         )
     })?;
     match quote_source.collect(&report_data)? {

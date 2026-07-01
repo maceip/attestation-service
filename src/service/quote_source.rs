@@ -4,11 +4,11 @@
 //! a hardware quote source: there is no software-witness mode. [`CommandQuoteSource`]
 //! is the only implementation and is mandatory (see `AppState::from_env`).
 //!
-//! [`CommandQuoteSource`] is the seam to the runtime layer (`attested-workload`
-//! / `unified-quote`'s `uq`/`aw` binaries): a configured command is given
-//! the 64-byte `report_data` (hex) and must emit the raw quote. This keeps
-//! device ioctls in the runtime layer where they belong, while the service
-//! orchestrates the build→bind→quote flow.
+//! [`CommandQuoteSource`] runs the configured runtime collector (`attested-workload`
+//! or `unified-quote` binaries). The command receives the 64-byte `report_data`
+//! value as hex and must emit the raw quote. Hardware device access stays in
+//! the runtime collector; this service builds the receipt, binds it to
+//! `report_data`, and attaches the returned quote.
 
 use crate::stackcore::quote::Platform;
 
@@ -30,18 +30,27 @@ pub trait QuoteSource: Send + Sync {
 /// Invoke an external collector. The command is run with the report_data hex
 /// appended as its final argument and must write the raw quote bytes to stdout.
 ///
-/// Example (conceptual): `AS_QUOTE_CMD="uq quote --platform tdx --report-data"`
+/// Example (conceptual): `AS_QUOTE_SOURCE="tdx:uq quote --platform tdx --report-data"`
 pub struct CommandQuoteSource {
     pub command: String,
     pub platform: Platform,
 }
 
+impl CommandQuoteSource {
+    pub fn new(command: String, platform: Platform) -> anyhow::Result<Self> {
+        parse_command(&command)?;
+        Ok(Self { command, platform })
+    }
+}
+
 impl QuoteSource for CommandQuoteSource {
     fn collect(&self, report_data: &[u8; 64]) -> anyhow::Result<Option<CollectedQuote>> {
         let rd_hex = hex::encode(report_data);
-        let out = std::process::Command::new("sh")
-            .arg("-c")
-            .arg(format!("{} {}", self.command, rd_hex))
+        let mut argv = parse_command(&self.command)?;
+        let prog = argv.remove(0);
+        let out = std::process::Command::new(prog)
+            .args(argv)
+            .arg(rd_hex)
             .output()?;
         if !out.status.success() {
             anyhow::bail!(
@@ -61,5 +70,23 @@ impl QuoteSource for CommandQuoteSource {
     }
     fn name(&self) -> &'static str {
         "command"
+    }
+}
+
+fn parse_command(command: &str) -> anyhow::Result<Vec<&str>> {
+    let argv = command.split_whitespace().collect::<Vec<_>>();
+    if argv.is_empty() {
+        anyhow::bail!("quote command must not be empty");
+    }
+    Ok(argv)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_quote_source_rejects_empty_command() {
+        assert!(CommandQuoteSource::new(" ".into(), Platform::Tdx).is_err());
     }
 }
