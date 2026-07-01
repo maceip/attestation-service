@@ -24,9 +24,9 @@ impl AppState {
     ///
     /// - `AS_QUOTE_SOURCE=<platform>:<command>`: collect real hardware quotes
     ///   through the configured command on `nitro`|`sev-snp`|`tdx`.
-    ///   `AS_QUOTE_CMD` + `AS_PLATFORM` is accepted only as a compatibility
-    ///   spelling and is validated the same way. With no quote source the service
-    ///   runs verify-only and refuses issuance.
+    ///   `AS_QUOTE_CMD` + `AS_PLATFORM` is accepted only as deprecated
+    ///   compatibility for older deployments and is validated the same way. With
+    ///   no quote source the service runs verify-only and refuses issuance.
     /// - `AS_BUILD_CMD`: if set, run this build command in the source tree;
     ///   otherwise the source tree is witnessed as-is (a measurement primitive,
     ///   still bound into the hardware quote).

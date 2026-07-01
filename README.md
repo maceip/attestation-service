@@ -78,7 +78,9 @@ loopback app-proxy — its own responses are then served over attested tls. set
 `AS_QUOTE_SOURCE="<platform>:<command>"` (`nitro`|`sev-snp`|`tdx`) to issue
 hardware-rooted receipts. with no quote source the service runs verify-only and
 **refuses issuance** — it never falls back to software-witness receipts. see
-`deploy/attested-workload.md`.
+`deploy/attested-workload.md`. `AS_QUOTE_CMD` + `AS_PLATFORM` is still accepted
+as deprecated compatibility for older deployments; new deployments should use
+`AS_QUOTE_SOURCE`.
 
 ## the stack
 
